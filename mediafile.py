@@ -1222,6 +1222,8 @@ class MediaField(object):
             return False
         elif self.out_type == six.text_type:
             return u''
+        elif self.out_type == dict:
+            return {}
 
 
 class ListMediaField(MediaField):
@@ -1412,6 +1414,34 @@ class CoverArtField(MediaField):
 
     def __delete__(self, mediafile):
         delattr(mediafile, 'images')
+
+
+class PopmMediaField(MediaField):
+    """ Access Popularimeter as dictionary."""
+
+
+class MP3PopmStorageStyle(StorageStyle):
+    formats = ['MP3']
+
+    def get(self, mutagen_file):
+        """Returns POPM dictionary: {EMAIL: {'rating': RATING, 'count': COUNT}}
+        """
+        return {
+            popm.email: {'rating': popm.rating, 'count': popm.count}
+            for popm in mutagen_file.tags.getall('POPM')
+        }
+
+    def set(self, mutagen_file, value):
+        """Set POPM. 'count' will be set to 0 by default."""
+        popm_list = [
+            mutagen.id3.POPM(
+                email=email,
+                rating=value[email]['rating'],
+                count=value[email].get('count', 0)
+            )
+            for email in value.keys()
+        ]
+        mutagen_file.tags.setall('POPM', popm_list)
 
 
 class QNumberField(MediaField):
@@ -1848,6 +1878,10 @@ class MediaFile(object):
         MP4StorageStyle('----:com.apple.iTunes:MusicBrainz Album Comment'),
         StorageStyle('MUSICBRAINZ_ALBUMCOMMENT'),
         ASFStorageStyle('MusicBrainz/Album Comment'),
+    )
+    popm = PopmMediaField(
+        MP3PopmStorageStyle(key='POPM', as_type=list),
+        out_type=dict
     )
 
     # Release date.

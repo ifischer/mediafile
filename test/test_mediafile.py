@@ -755,6 +755,37 @@ class MP3Test(ReadWriteTestBase, PartialTestMixin,
         mediafile = self._mediafile_fixture('image_unknown_type')
         self.assertEqual(mediafile.images[0].type, ImageType.other)
 
+    def test_write_single_popm(self):
+        mediafile = self._mediafile_fixture('empty')
+        test_email = 'test1@foobar.de'
+        mediafile.popm = {
+            test_email: {'rating': 1, 'count': 1}
+        }
+        mediafile.save()
+        self.assertEqual(mediafile.popm, {
+            test_email: {'rating': 1, 'count': 1}
+        })
+
+    def test_write_popm_without_count(self):
+        mediafile = self._mediafile_fixture('empty')
+        test_email = 'test1@foobar.de'
+        mediafile.popm = {test_email: {'rating': 1}}
+        mediafile.save()
+        self.assertEqual(mediafile.popm, {
+            test_email: {'rating': 1, 'count': 0}
+        })
+
+    def test_write_multiple_popm(self):
+        mediafile = self._mediafile_fixture('full')
+        mediafile.popm = {'test1@foobar.de': {'rating': 1, 'count': 1},
+                          'test2@foobar.de': {'rating': 2, 'count': 2}}
+        mediafile.save()
+
+        self.assertEqual(mediafile.popm, {
+            'test1@foobar.de': {'rating': 1, 'count': 1},
+            'test2@foobar.de': {'rating': 2, 'count': 2},
+        })
+
 
 class MP4Test(ReadWriteTestBase, PartialTestMixin,
               ImageStructureTestMixin, unittest.TestCase):
@@ -975,7 +1006,7 @@ class MediaFieldTest(unittest.TestCase):
 
     def test_known_fields(self):
         fields = list(ReadWriteTestBase.tag_fields)
-        fields.extend(('encoder', 'images', 'genres', 'albumtype'))
+        fields.extend(('encoder', 'images', 'genres', 'albumtype', 'popm'))
         assertCountEqual(self, MediaFile.fields(), fields)
 
     def test_fields_in_readable_fields(self):
