@@ -9,7 +9,7 @@ build:
 .PHONY: clean
 clean:
 	find . \! -user $(USER) -exec sudo chown $(USER) {} \;
-	rm -rf *.egg-info .tox
+	rm -rf *.egg-info .tox .pytest_cache .venv
 	-docker stop $(CONTAINER)
 	-docker rm $(CONTAINER)
 
