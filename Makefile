@@ -36,8 +36,8 @@ ipython:
 
 .PHONY: virtualenv
 virtualenv:
-	virtualenv --python=/usr/bin/python3.7 venv
-	. ./venv/bin/activate && \
+	virtualenv --python=/usr/bin/python3.7 .venv
+	. ./.venv/bin/activate && \
 		pip install -r requirements.txt && \
         pip install -r requirements-dev.txt && \
         pip install .
