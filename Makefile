@@ -1,5 +1,6 @@
 CONTAINER  = mediafile
 DOCKER_CMD = docker run -v $(PWD):/app -it --rm $(CONTAINER)
+VIRTUALENV_DIR = .venv
 
 .PHONY: build
 build:
@@ -7,6 +8,8 @@ build:
 
 .PHONY: clean
 clean:
+	find . \! -user $(USER) -exec sudo chown $(USER) {} \;
+	rm -rf *.egg-info .tox
 	-docker stop $(CONTAINER)
 	-docker rm $(CONTAINER)
 
@@ -36,12 +39,11 @@ ipython:
 
 .PHONY: virtualenv
 virtualenv:
-	virtualenv --python=/usr/bin/python3.7 venv
-	. ./venv/bin/activate && \
+	virtualenv --python=/usr/bin/python3.7 $(VIRTUALENV_DIR)
+	. $(VIRTUALENV_DIR)/bin/activate && \
 		pip install -r requirements.txt && \
         pip install -r requirements-dev.txt && \
         pip install .
-
 
 .PHONY: testpy
 testpy:
