@@ -56,6 +56,7 @@ import logging
 import six
 
 
+__version__ = '0.7.0'
 __all__ = ['UnreadableFileError', 'FileTypeError', 'MediaFile']
 
 log = logging.getLogger(__name__)
@@ -140,10 +141,12 @@ def mutagen_call(action, path, func, *args, **kwargs):
 # Utility.
 
 def _safe_cast(out_type, val):
-    """Try to covert val to out_type but never raise an exception. If
-    the value can't be converted, then a sensible default value is
-    returned. out_type should be bool, int, or unicode; otherwise, the
-    value is just passed through.
+    """Try to covert val to out_type but never raise an exception.
+
+    If the value does not exist, return None. Or, if the value
+    can't be converted, then a sensible default value is returned.
+    out_type should be bool, int, or unicode; otherwise, the value
+    is just passed through.
     """
     if val is None:
         return None
@@ -289,11 +292,11 @@ def _sc_encode(gain, peak):
     # SoundCheck stores absolute RMS values in some unknown units rather
     # than the dB values RG uses. We can calculate these absolute values
     # from the gain ratio using a reference value of 1000 units. We also
-    # enforce the maximum value here, which is equivalent to about
-    # -18.2dB.
-    g1 = int(min(round((10 ** (gain / -10)) * 1000), 65534))
+    # enforce the maximum and minimum value here, which is equivalent to
+    # about -18.2dB and 30.0dB.
+    g1 = int(min(round((10 ** (gain / -10)) * 1000), 65534)) or 1
     # Same as above, except our reference level is 2500 units.
-    g2 = int(min(round((10 ** (gain / -10)) * 2500), 65534))
+    g2 = int(min(round((10 ** (gain / -10)) * 2500), 65534)) or 1
 
     # The purpose of these values are unknown, but they also seem to be
     # unused so we just use zero.
@@ -1545,12 +1548,13 @@ class MediaFile(object):
         # Set the ID3v2.3 flag only for MP3s.
         self.id3v23 = id3v23 and self.type == 'mp3'
 
-    def save(self):
-        """Write the object's tags back to the file. May
-        throw `UnreadableFileError`.
+    def save(self, **kwargs):
+        """Write the object's tags back to the file.
+
+        May throw `UnreadableFileError`. Accepts keyword arguments to be
+        passed to Mutagen's `save` function.
         """
         # Possibly save the tags to ID3v2.3.
-        kwargs = {}
         if self.id3v23:
             id3 = self.mgfile
             if hasattr(id3, 'tags'):
@@ -1786,6 +1790,7 @@ class MediaFile(object):
     albumtype = MediaField(
         MP3DescStorageStyle(u'MusicBrainz Album Type'),
         MP4StorageStyle('----:com.apple.iTunes:MusicBrainz Album Type'),
+        StorageStyle('RELEASETYPE'),
         StorageStyle('MUSICBRAINZ_ALBUMTYPE'),
         ASFStorageStyle('MusicBrainz/Album Type'),
     )
@@ -1863,6 +1868,7 @@ class MediaFile(object):
     albumstatus = MediaField(
         MP3DescStorageStyle(u'MusicBrainz Album Status'),
         MP4StorageStyle('----:com.apple.iTunes:MusicBrainz Album Status'),
+        StorageStyle('RELEASESTATUS'),
         StorageStyle('MUSICBRAINZ_ALBUMSTATUS'),
         ASFStorageStyle('MusicBrainz/Album Status'),
     )

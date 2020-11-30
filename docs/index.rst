@@ -9,10 +9,8 @@ of tags.
 It currently supports MP3 files (ID3 tags), AAC files (as tagged by iTunes) as
 well as FLAC, Ogg, Monkey's Audio, WavPack, and Musepack.
 
-MediaFile attempts to always return a usable value (i.e., it never returns
-``None`` or throws an exception when a tag is accessed). If a tag is not
-present, an empty and false value of the appropriate type -- such as zero or
-the empty string -- is returned.
+If a tag does not exist, MediaFile will return ``None`` instead of throwing
+an exception.
 
 .. _Mutagen: https://github.com/quodlibet/mutagen
 
@@ -96,14 +94,68 @@ Internals
 .. autoclass:: StorageStyle
     :members:
 
+    
+Examples
+--------
+
+To add cover art to a MediaFile:
+
+.. code:: python
+
+    from mediafile import MediaFile, Image, ImageType
+
+    image_file = "cover.jpg"
+    with open(image_file, 'rb') as f:
+        cover = f.read()
+        cover = Image(data=cover, desc=u'album cover', type=ImageType.front)
+    f = MediaFile("file.mp3)
+    f.images = [cover]
+    f.save()
+    
+
+To copy tags from one MediaFile to another:
+
+.. code:: python
+
+    from mediafile import MediaFile
+
+    f = MediaFile("file1.mp3")
+    g = MediaFile("file2.mp3")
+
+    for field in f.fields():
+        try:
+            setattr(g, field, getattr(f, field))
+        except:
+            pass
+
+    g.save()
+    
 
 Changelog
 ---------
+
+v0.7.0
+''''''
+
+- Mutagen 1.45.0 or later is now required.
+
+v0.6.0
+''''''
+
+- Enforce a minimum value for SoundCheck gain values.
+
+v0.5.0
+''''''
+
+- Refactored the distribution to use `Flit`_.
+
+.. _Flit: https://flit.readthedocs.io/
 
 v0.4.0
 ''''''
 
 - Added a ``barcode`` field.
+- Added new tag mappings for ``albumtype`` and ``albumstatus``.
 
 v0.3.0
 ''''''
