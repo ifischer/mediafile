@@ -75,6 +75,7 @@ TYPES = {
     'asf':  'Windows Media',
     'aiff': 'AIFF',
     'dsf':  'DSD Stream File',
+    'riff': 'RIFF'
 }
 
 PREFERRED_IMAGE_EXTENSIONS = {'jpeg': 'jpg'}
@@ -731,6 +732,18 @@ class MP4ImageStorageStyle(MP4ListStorageStyle):
         else:
             raise ValueError(u'MP4 files only supports PNG and JPEG images')
         return mutagen.mp4.MP4Cover(image.data, kind)
+
+
+class WaveStorageStyle(StorageStyle):
+    """Store data in Wave (RIFF) frames.
+    """
+    formats = ['WAVE']
+
+    def fetch(self, mutagen_file):
+        try:
+            return mutagen_file[self.key].text[0]
+        except (KeyError, IndexError):
+            return None
 
 
 class MP3StorageStyle(StorageStyle):
@@ -1538,6 +1551,8 @@ class MediaFile(object):
             self.type = 'aiff'
         elif type(self.mgfile).__name__ == 'DSF':
             self.type = 'dsf'
+        elif type(self.mgfile).__name__ == 'WAVE':
+            self.type = 'wave'
         else:
             raise FileTypeError(path, type(self.mgfile).__name__)
 
@@ -1666,12 +1681,14 @@ class MediaFile(object):
         MP4StorageStyle('\xa9nam'),
         StorageStyle('TITLE'),
         ASFStorageStyle('Title'),
+        WaveStorageStyle('TIT2'),
     )
     artist = MediaField(
         MP3StorageStyle('TPE1'),
         MP4StorageStyle('\xa9ART'),
         StorageStyle('ARTIST'),
         ASFStorageStyle('Author'),
+        WaveStorageStyle('TPE1'),
     )
     album = MediaField(
         MP3StorageStyle('TALB'),
@@ -1698,6 +1715,7 @@ class MediaFile(object):
         MP4StorageStyle('\xa9wrt'),
         StorageStyle('COMPOSER'),
         ASFStorageStyle('WM/Composer'),
+        WaveStorageStyle('TCOM'),
     )
     composer_sort = MediaField(
         MP3StorageStyle('TSOC'),
@@ -1771,6 +1789,7 @@ class MediaFile(object):
         MP4StorageStyle('tmpo', as_type=int),
         StorageStyle('BPM'),
         ASFStorageStyle('WM/BeatsPerMinute'),
+        WaveStorageStyle('TBPM'),
         out_type=int,
     )
     comp = MediaField(
@@ -1896,6 +1915,7 @@ class MediaFile(object):
         MP4StorageStyle('\xa9day'),
         StorageStyle('DATE'),
         ASFStorageStyle('WM/Year'),
+        WaveStorageStyle('TDRC'),
         year=(StorageStyle('YEAR'),))
 
     year = date.year_field()
